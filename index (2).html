@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DOCTLE — o jogo diário de medicina</title>
+<meta name="description" content="Descubra a doença, o exame e a residência médica do dia. Um jogo diário estilo Wordle para estudantes de medicina.">
+
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="DOCTLE — o jogo diário de medicina">
+<meta property="og:description" content="Descubra a doença, o exame e a residência médica do dia. Um jogo diário estilo Wordle para estudantes de medicina.">
+<meta property="og:image" content="og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DOCTLE — o jogo diário de medicina">
+<meta name="twitter:description" content="Descubra a doença, o exame e a residência médica do dia.">
+<meta name="twitter:image" content="og-image.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #EDEAE0;
+    --paper-line: #DAD5C4;
+    --ink: #1F2E2B;
+    --ink-soft: #566661;
+    --teal: #0E5C52;
+    --teal-dark: #0A433C;
+    --exam: #1F6F8B;
+    --exam-dark: #164F63;
+    --res: #9C4F96;
+    --res-dark: #723872;
+    --correct: #3F7D5C;
+    --correct-bg: #DCEAE0;
+    --wrong: #B0483A;
+    --wrong-bg: #F3DCD7;
+    --partial: #C1862B;
+    --partial-bg: #F3E4C7;
+    --pending-bg: #F0EEE6;
+    --border: #C9C2AF;
+    --card: #F6F4EC;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      repeating-linear-gradient(var(--paper) 0px, var(--paper) 27px, var(--paper-line) 28px),
+      var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    min-height:100vh;
+    padding:28px 16px 60px;
+  }
+  .sheet{
+    max-width:860px;
+    margin:0 auto;
+    background:var(--card);
+    border:1px solid var(--border);
+    box-shadow:0 2px 0 var(--border), 0 14px 34px -20px rgba(15,30,26,0.45);
+    position:relative;
+  }
+  .tab-corner{
+    position:absolute;
+    top:-18px; left:28px;
+    width:52px; height:34px;
+    background:var(--wrong);
+    border-radius:4px 4px 0 0;
+  }
+  .tab-corner::after{
+    content:"+";
+    color:#fff;
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:700;
+    font-size:20px;
+    position:absolute;
+    left:50%; top:48%;
+    transform:translate(-50%,-50%);
+  }
+  header{
+    padding:30px 32px 16px;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .brand-block h1{
+    font-family:'Courier Prime', monospace;
+    font-weight:700;
+    letter-spacing:2px;
+    font-size:34px;
+    margin:0 0 4px;
+    color:var(--teal-dark);
+  }
+  .brand-block p{
+    margin:0;
+    font-size:13px;
+    color:var(--ink-soft);
+    letter-spacing:0.4px;
+  }
+  .chart-no{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    text-align:right;
+    line-height:1.6;
+  }
+  .chart-no b{color:var(--ink);}
+
+  .mode-tabs{
+    display:flex;
+    gap:2px;
+    padding:0 32px;
+    border-bottom:2px solid var(--ink);
+    overflow-x:auto;
+  }
+  .mode-tab{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:0.4px;
+    color:var(--ink-soft);
+    background:none;
+    border:none;
+    cursor:pointer;
+    padding:12px 16px;
+    border-bottom:3px solid transparent;
+    margin-bottom:-2px;
+    white-space:nowrap;
+    transition:color 0.15s;
+  }
+  .mode-tab:hover{color:var(--ink);}
+  .mode-tab.active{color:var(--ink); font-weight:700;}
+  .mode-tab[data-mode="doenca"].active{border-color:var(--teal);}
+  .mode-tab[data-mode="exame"].active{border-color:var(--exam);}
+  .mode-tab[data-mode="residencia"].active{border-color:var(--res);}
+
+  .mode-panel{display:none;}
+  .mode-panel.active{display:block;}
+
+  .panel{padding:24px 32px 8px;}
+
+  .guess-row{display:flex; gap:10px; margin-bottom:18px;}
+  .autocomplete-wrapper{flex:1; position:relative;}
+  .autocomplete-wrapper input{width:100%;}
+  .guess-row input{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:15px;
+    padding:11px 14px;
+    border:1.5px solid var(--ink);
+    background:#fff;
+    color:var(--ink);
+    border-radius:2px;
+  }
+  .guess-row input:focus{outline:2px solid var(--teal); outline-offset:1px;}
+  .suggestions{
+    list-style:none; margin:2px 0 0; padding:4px 0; position:absolute; top:100%; left:0; right:0;
+    background:#fff; border:1.5px solid var(--ink); border-top:none; max-height:220px; overflow-y:auto;
+    z-index:20; display:none; box-shadow:0 8px 18px -8px rgba(15,30,26,0.35);
+  }
+  .suggestions.show{display:block;}
+  .suggestions li{padding:9px 14px; font-size:14px; cursor:pointer;}
+  .suggestions li:hover, .suggestions li.hl{background:var(--pending-bg);}
+  .suggestions li.empty{color:var(--ink-soft); font-style:italic; cursor:default;}
+  .suggestions li.empty:hover{background:none;}
+
+  .guess-row button{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    font-size:13px;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    padding:0 22px;
+    background:var(--teal);
+    color:#fff;
+    border:none;
+    border-radius:2px;
+    cursor:pointer;
+    transition:background 0.15s;
+  }
+  .mode-panel[data-mode="exame"] .guess-row button{background:var(--exam);}
+  .mode-panel[data-mode="exame"] .guess-row button:hover{background:var(--exam-dark);}
+  .mode-panel[data-mode="residencia"] .guess-row button{background:var(--res);}
+  .mode-panel[data-mode="residencia"] .guess-row button:hover{background:var(--res-dark);}
+  .guess-row button:hover{background:var(--teal-dark);}
+  .guess-row button:disabled{background:#9AA39F; cursor:not-allowed;}
+
+  .status-line{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin:-6px 0 20px;
+  }
+
+  /* ---- doenca board ---- */
+  .board{display:flex; flex-direction:column; gap:2px; margin-bottom:10px;}
+  .col-labels, .row{
+    display:grid;
+    grid-template-columns: 1.4fr 1fr .85fr .85fr 1.05fr .8fr 1.15fr;
+    gap:2px;
+  }
+  .row{perspective:700px;}
+  .col-labels div{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    color:var(--ink-soft);
+    padding:0 6px 6px;
+    border-bottom:1px solid var(--border);
+  }
+  .cell{
+    background:#fff;
+    border:1px solid var(--border);
+    padding:10px 8px;
+    font-size:12.5px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    min-height:44px;
+    line-height:1.25;
+    color:var(--ink);
+    transform-style:preserve-3d;
+    backface-visibility:hidden;
+  }
+  .cell.name{font-weight:600; justify-content:flex-start; text-align:left; background:var(--ink); color:#fff;}
+  .cell.correct{background:var(--correct-bg); border-color:var(--correct); color:var(--teal-dark); font-weight:600;}
+  .cell.wrong{background:var(--wrong-bg); border-color:var(--wrong); color:#7A2E22;}
+  .cell.partial{background:var(--partial-bg); border-color:var(--partial); color:#7A5314; font-weight:600;}
+  .cell.pending{background:var(--pending-bg); color:transparent;}
+  .arrow{font-size:14px; margin-left:4px;}
+  .unit{font-size:9.5px; opacity:0.75; margin-left:2px;}
+  .cell.flip-anim{animation:flipCell 0.55s ease;}
+  @keyframes flipCell{0%{transform:rotateX(0deg);}48%{transform:rotateX(90deg);}52%{transform:rotateX(90deg);}100%{transform:rotateX(0deg);}}
+  .empty-row .cell{background:transparent; border-style:dashed; color:var(--border); opacity:0.7;}
+
+  /* ---- exame clues ---- */
+  .clue-list{display:flex; flex-direction:column; gap:10px; margin-bottom:16px;}
+  .clue-card{
+    background:#fff; border:1px solid var(--border); border-left:4px solid var(--exam);
+    padding:12px 14px; font-size:13.5px; line-height:1.45;
+    animation:slideIn 0.35s ease;
+  }
+  .clue-card .clue-num{
+    font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--exam);
+    text-transform:uppercase; letter-spacing:0.6px; display:block; margin-bottom:4px;
+  }
+  @keyframes slideIn{from{opacity:0; transform:translateX(-10px);} to{opacity:1; transform:translateX(0);}}
+
+  /* ---- residencia emojis ---- */
+  .emoji-row{display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;}
+  .emoji-tile{
+    width:62px; height:62px; background:#fff; border:2px solid var(--border);
+    border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:28px;
+  }
+  .emoji-tile.placeholder{color:var(--border); font-size:20px; font-family:'IBM Plex Mono',monospace;}
+  .emoji-tile.revealed{border-color:var(--res); animation:popTile 0.4s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes popTile{0%{transform:scale(0.4); opacity:0;} 70%{transform:scale(1.12); opacity:1;} 100%{transform:scale(1);}}
+
+  .wrong-chips{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px;}
+  .chip{
+    font-family:'IBM Plex Mono',monospace; font-size:10.5px; padding:4px 9px;
+    background:var(--wrong-bg); border:1px solid var(--wrong); color:#7A2E22;
+    text-decoration:line-through; border-radius:3px;
+  }
+
+  .legend{display:flex; gap:16px; flex-wrap:wrap; font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-soft); margin:16px 0 26px;}
+  .legend span{display:inline-flex; align-items:center; gap:5px;}
+  .swatch{width:10px; height:10px; display:inline-block; border:1px solid var(--border);}
+
+  .result{
+    display:none; margin:0 32px 28px; padding:20px 22px; border:2px solid var(--ink);
+    background:#fff; position:relative; opacity:0; transform:scale(0.88) translateY(6px);
+  }
+  .result.show{display:block; animation:popIn 0.5s cubic-bezier(.34,1.56,.64,1) forwards;}
+  @keyframes popIn{
+    0%{opacity:0; transform:scale(0.85) translateY(10px);}
+    60%{opacity:1; transform:scale(1.03) translateY(-2px);}
+    100%{opacity:1; transform:scale(1) translateY(0);}
+  }
+  .result .stamp{
+    position:absolute; top:14px; right:20px; font-family:'Courier Prime', monospace; font-weight:700;
+    font-size:12.5px; letter-spacing:1px; padding:5px 10px; border:2px solid; transform:rotate(-6deg); text-transform:uppercase;
+  }
+  .stamp.win{color:var(--correct); border-color:var(--correct);}
+  .stamp.lose{color:var(--wrong); border-color:var(--wrong);}
+  .result h2{margin:0 0 6px; font-family:'Courier Prime',monospace; font-size:18px;}
+  .result p{margin:4px 0; font-size:13.5px; color:var(--ink-soft);}
+  .result-actions{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;}
+  .result-actions button{
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px; text-transform:uppercase;
+    letter-spacing:0.5px; padding:9px 16px; border:none; cursor:pointer;
+  }
+  .btn-newgame{background:var(--ink); color:#fff;}
+  .btn-share{background:var(--teal); color:#fff;}
+  .mode-panel[data-mode="exame"] .btn-share{background:var(--exam);}
+  .mode-panel[data-mode="residencia"] .btn-share{background:var(--res);}
+  .btn-share.copied{background:var(--correct) !important;}
+  .share-preview{
+    margin-top:12px; background:var(--pending-bg); border:1px dashed var(--border); padding:10px 12px;
+    font-family:'IBM Plex Mono', monospace; font-size:12px; white-space:pre-wrap; line-height:1.6; display:none;
+  }
+  .share-preview.show{display:block;}
+  .next-case{
+    margin-top:14px; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-soft);
+    text-align:center; padding-top:12px; border-top:1px dashed var(--paper-line);
+  }
+  .next-case span{font-weight:700; color:var(--ink);}
+
+  footer{padding:16px 32px 28px; font-size:11px; font-family:'IBM Plex Mono', monospace; color:var(--ink-soft); border-top:1px solid var(--paper-line);}
+
+  @media (max-width:640px){
+    body{padding:14px 8px 40px;}
+    .sheet{max-width:100%;}
+    .tab-corner{left:16px; width:40px; height:26px; top:-14px;}
+    .tab-corner::after{font-size:15px;}
+    header{padding:22px 16px 12px; flex-direction:column; align-items:flex-start; gap:6px;}
+    .brand-block h1{font-size:26px;}
+    .brand-block p{font-size:11.5px;}
+    .chart-no{text-align:left; font-size:11px;}
+    .mode-tabs{padding:0 12px;}
+    .mode-tab{padding:10px 12px; font-size:10.5px;}
+
+    .panel{padding:16px 14px 4px;}
+    .guess-row{flex-direction:column; gap:8px;}
+    .guess-row input{font-size:16px; padding:12px 14px;}
+    .guess-row button{padding:12px 14px; width:100%;}
+    .suggestions li{padding:12px 14px; font-size:15px;}
+    .status-line{margin:0 0 14px; text-align:center;}
+
+    .board-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 -14px; padding:0 14px 6px;}
+    .board{min-width:600px; gap:3px;}
+    .col-labels, .row{grid-template-columns: 112px 84px 68px 68px 92px 62px 96px;}
+    .col-labels{margin-bottom:2px;}
+    .col-labels div{font-size:9.5px; padding:0 5px 5px; white-space:nowrap;}
+    .cell{font-size:11.5px; padding:8px 6px; min-height:40px;}
+    .cell.name{font-size:12px;}
+
+    .emoji-tile{width:52px; height:52px; font-size:24px;}
+
+    .result{margin:0 14px 20px; padding:16px;}
+    .result .stamp{position:static; display:inline-block; margin-bottom:8px; transform:rotate(-3deg);}
+    .result-actions{flex-direction:column;}
+    .result-actions button{width:100%; text-align:center; padding:12px 14px;}
+
+    footer{padding:14px 14px 22px; font-size:10px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="sheet">
+  <div class="tab-corner"></div>
+  <header>
+    <div class="brand-block">
+      <h1>DOCTLE</h1>
+      <p id="modeTagline">descubra a doença do dia — atributos revelam a cada tentativa</p>
+    </div>
+    <div class="chart-no">PRONTUÁRIO Nº <b id="chartNo">0000</b></div>
+  </header>
+
+  <nav class="mode-tabs">
+    <button class="mode-tab active" data-mode="doenca">Doença do dia</button>
+    <button class="mode-tab" data-mode="exame">Exame do dia</button>
+    <button class="mode-tab" data-mode="residencia">Residência do dia</button>
+  </nav>
+
+  <!-- ===================== MODO 1: DOENÇA ===================== -->
+  <section class="mode-panel active" data-mode="doenca">
+    <div class="panel">
+      <div class="guess-row">
+        <div class="autocomplete-wrapper">
+          <input id="doencaInput" placeholder="Digite o nome de uma doença..." autocomplete="off">
+          <ul class="suggestions" id="doencaSuggestions"></ul>
+        </div>
+        <button id="doencaBtn">Diagnosticar</button>
+      </div>
+      <div class="status-line" id="doencaStatus">Tentativa 0 de 8</div>
+
+      <div class="board-scroll">
+        <div class="board">
+          <div class="col-labels">
+            <div>Doença</div><div>Categoria</div><div>Cura</div><div>Contágio</div><div>Sistema</div><div>Ano</div><div>Incidência BR</div>
+          </div>
+          <div id="doencaRows"></div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span><span class="swatch" style="background:var(--correct-bg); border-color:var(--correct);"></span> correto</span>
+        <span><span class="swatch" style="background:var(--partial-bg); border-color:var(--partial);"></span> perto (veja a seta)</span>
+        <span><span class="swatch" style="background:var(--wrong-bg); border-color:var(--wrong);"></span> incorreto</span>
+      </div>
+    </div>
+
+    <div class="result" id="doencaResult">
+      <div class="stamp" id="doencaStamp">DIAGNOSTICADO</div>
+      <h2 id="doencaTitle">Caso encerrado</h2>
+      <p id="doencaText"></p>
+      <div class="result-actions">
+        <button class="btn-share" id="doencaShareBtn">Copiar resultado</button>
+      </div>
+      <div class="share-preview" id="doencaSharePreview"></div>
+      <div class="next-case" id="doencaNextCase">Próximo caso em <span id="doencaCountdown">--:--:--</span></div>
+    </div>
+  </section>
+
+  <!-- ===================== MODO 2: EXAME ===================== -->
+  <section class="mode-panel" data-mode="exame">
+    <div class="panel">
+      <div class="guess-row">
+        <div class="autocomplete-wrapper">
+          <input id="exameInput" placeholder="Digite o nome de um exame..." autocomplete="off">
+          <ul class="suggestions" id="exameSuggestions"></ul>
+        </div>
+        <button id="exameBtn">Investigar</button>
+      </div>
+      <div class="status-line" id="exameStatus">Pista 1 de 5</div>
+
+      <div class="clue-list" id="clueList"></div>
+      <div class="wrong-chips" id="exameWrongChips"></div>
+    </div>
+
+    <div class="result" id="exameResult">
+      <div class="stamp" id="exameStamp">LAUDO CONCLUÍDO</div>
+      <h2 id="exameTitle">Caso encerrado</h2>
+      <p id="exameText"></p>
+      <div class="result-actions">
+        <button class="btn-share" id="exameShareBtn">Copiar resultado</button>
+      </div>
+      <div class="share-preview" id="exameSharePreview"></div>
+      <div class="next-case" id="exameNextCase">Próximo caso em <span id="exameCountdown">--:--:--</span></div>
+    </div>
+  </section>
+
+  <!-- ===================== MODO 3: RESIDÊNCIA ===================== -->
+  <section class="mode-panel" data-mode="residencia">
+    <div class="panel">
+      <div class="guess-row">
+        <div class="autocomplete-wrapper">
+          <input id="residenciaInput" placeholder="Digite uma especialidade..." autocomplete="off">
+          <ul class="suggestions" id="residenciaSuggestions"></ul>
+        </div>
+        <button id="residenciaBtn">Apostar</button>
+      </div>
+      <div class="status-line" id="residenciaStatus">Emoji 1 de 4</div>
+
+      <div class="emoji-row" id="emojiRow"></div>
+      <div class="wrong-chips" id="residenciaWrongChips"></div>
+    </div>
+
+    <div class="result" id="residenciaResult">
+      <div class="stamp" id="residenciaStamp">BATEU O MARTELO</div>
+      <h2 id="residenciaTitle">Caso encerrado</h2>
+      <p id="residenciaText"></p>
+      <div class="result-actions">
+        <button class="btn-share" id="residenciaShareBtn">Copiar resultado</button>
+      </div>
+      <div class="share-preview" id="residenciaSharePreview"></div>
+      <div class="next-case" id="residenciaNextCase">Próximo caso em <span id="residenciaCountdown">--:--:--</span></div>
+    </div>
+  </section>
+
+  <footer>
+    protótipo v0.5 · dados simplificados para fins de jogo, não usar como referência clínica · incidência = casos estimados por 100 mil hab./ano (ordem de grandeza aproximada)
+  </footer>
+</div>
+
+<script>
+/* =================================================================
+   DADOS
+================================================================= */
+const diseases = [
+  {name:"Dengue", categoria:"Vetor", cura:"Sim", contagio:"Não", sistema:"Circulatório", ano:1943, incidencia:900},
+  {name:"Tuberculose", categoria:"Contato/Ar", cura:"Sim", contagio:"Sim", sistema:"Respiratório", ano:1882, incidencia:38},
+  {name:"HIV/AIDS", categoria:"DST", cura:"Não", contagio:"Sim", sistema:"Imunológico", ano:1983, incidencia:18},
+  {name:"Lúpus", categoria:"Autoimune", cura:"Não", contagio:"Não", sistema:"Múltiplos", ano:1851, incidencia:3},
+  {name:"Anemia Falciforme", categoria:"Genética", cura:"Não", contagio:"Não", sistema:"Hematológico", ano:1910, incidencia:3},
+  {name:"Anemia Ferropriva", categoria:"Nutricional", cura:"Sim", contagio:"Não", sistema:"Hematológico", ano:1832, incidencia:1500},
+  {name:"Hanseníase", categoria:"Contato/Ar", cura:"Sim", contagio:"Sim", sistema:"Tegumentar", ano:1873, incidencia:9},
+  {name:"Malária", categoria:"Vetor", cura:"Sim", contagio:"Não", sistema:"Circulatório", ano:1880, incidencia:25},
+  {name:"Sífilis", categoria:"DST", cura:"Sim", contagio:"Sim", sistema:"Múltiplos", ano:1905, incidencia:90},
+  {name:"Hepatite B", categoria:"DST", cura:"Não", contagio:"Sim", sistema:"Digestório", ano:1965, incidencia:6},
+  {name:"Diabetes Tipo 1", categoria:"Autoimune", cura:"Não", contagio:"Não", sistema:"Endócrino", ano:1921, incidencia:5},
+  {name:"Escorbuto", categoria:"Nutricional", cura:"Sim", contagio:"Não", sistema:"Múltiplos", ano:1932, incidencia:0.1},
+  {name:"Doença de Chagas", categoria:"Vetor", cura:"Não", contagio:"Não", sistema:"Circulatório", ano:1909, incidencia:0.5},
+  {name:"Fibrose Cística", categoria:"Genética", cura:"Não", contagio:"Não", sistema:"Respiratório", ano:1989, incidencia:0.3},
+  {name:"Hemofilia", categoria:"Genética", cura:"Não", contagio:"Não", sistema:"Hematológico", ano:1803, incidencia:5},
+  {name:"Raiva", categoria:"Contato/Ar", cura:"Não", contagio:"Não", sistema:"Nervoso", ano:1885, incidencia:0.02},
+  {name:"Bócio Endêmico", categoria:"Nutricional", cura:"Sim", contagio:"Não", sistema:"Endócrino", ano:1896, incidencia:0.5}
+];
+
+const exames = [
+  {name:"Tomografia de Crânio", clues:[
+    "Disponível 24h na maioria dos prontos-socorros de médio porte",
+    "Utiliza radiação ionizante",
+    "Raramente precisa de contraste quando pedido em caráter de urgência",
+    "É o exame de escolha pra afastar AVC hemorrágico agudo",
+    "Também é o primeiro exame pedido em traumatismo cranioencefálico"
+  ]},
+  {name:"Raio-X de Tórax", clues:[
+    "Um dos exames mais solicitados em qualquer pronto-socorro",
+    "Não usa contraste",
+    "Pode mostrar consolidações, derrames pleurais e até fraturas de costela",
+    "É o primeiro exame pedido em suspeita de pneumonia",
+    "Também avalia o tamanho e o formato da silhueta cardíaca"
+  ]},
+  {name:"Eletrocardiograma", clues:[
+    "Leva poucos minutos e não usa radiação",
+    "Registra a atividade elétrica de um órgão",
+    "Fundamental na avaliação inicial de dor torácica",
+    "Consegue identificar um infarto agudo do miocárdio",
+    "Usa eletrodos colados na pele do paciente"
+  ]},
+  {name:"Hemograma Completo", clues:[
+    "Um dos exames laboratoriais mais pedidos do mundo",
+    "Feito a partir de uma amostra de sangue venoso",
+    "Avalia três linhagens celulares principais",
+    "Pode indicar anemia, infecção ou alterações de plaquetas",
+    "O resultado geralmente sai em poucas horas"
+  ]},
+  {name:"Ultrassonografia Abdominal", clues:[
+    "Não usa radiação ionizante",
+    "Usa ondas sonoras de alta frequência",
+    "Exame bastante operador-dependente",
+    "Muito usado pra avaliar vesícula, fígado e rins",
+    "Costuma ser o primeiro exame de imagem pedido na gestação"
+  ]},
+  {name:"Ressonância Magnética", clues:[
+    "Exame de imagem sem radiação ionizante",
+    "Usa um campo magnético potente",
+    "Contraindicado em pacientes com certos tipos de implante metálico",
+    "Excelente pra avaliar tecidos moles, como cérebro e medula",
+    "Costuma demorar bem mais que uma tomografia"
+  ]},
+  {name:"Endoscopia Digestiva Alta", clues:[
+    "Exame invasivo que usa um tubo flexível com câmera",
+    "Exige jejum antes da realização",
+    "Pode ser feito com sedação",
+    "Avalia esôfago, estômago e duodeno",
+    "Padrão-ouro pra diagnóstico de úlcera péptica"
+  ]},
+  {name:"Colonoscopia", clues:[
+    "Exame invasivo que exige preparo intestinal rigoroso",
+    "Usa um tubo flexível com câmera",
+    "Permite biópsias e remoção de pólipos durante o próprio exame",
+    "Principal exame de rastreio pro câncer colorretal",
+    "Avalia todo o intestino grosso"
+  ]},
+  {name:"Glicemia de Jejum", clues:[
+    "Exame laboratorial simples, feito com coleta de sangue",
+    "Exige jejum de pelo menos 8 horas",
+    "Um dos exames mais usados pra rastrear uma doença metabólica",
+    "Valores persistentemente altos fecham diagnóstico de diabetes",
+    "Costuma vir acompanhado da hemoglobina glicada no mesmo pedido"
+  ]},
+  {name:"Mamografia", clues:[
+    "Exame de imagem que usa baixa dose de radiação",
+    "Feito com compressão da mama entre duas placas",
+    "Recomendado como rastreio a partir de certa faixa etária",
+    "Principal exame de rastreio pro câncer de mama",
+    "Costuma ser bienal na rotina de rastreamento"
+  ]},
+  {name:"Eletroencefalograma", clues:[
+    "Não usa radiação, registra atividade elétrica",
+    "Usa eletrodos posicionados no couro cabeludo",
+    "Fundamental na investigação de crises convulsivas",
+    "Ajuda a diagnosticar epilepsia",
+    "Pode ser feito durante o sono, em caráter de privação"
+  ]},
+  {name:"PPD (Teste Tuberculínico)", clues:[
+    "Exame simples, feito com injeção intradérmica",
+    "O resultado só é lido depois de alguns dias",
+    "Mede o tamanho da reação (enduração) no local da aplicação",
+    "Usado pra rastrear uma infecção respiratória crônica",
+    "Ajuda a diagnosticar infecção latente por tuberculose"
+  ]}
+];
+
+const residencias = [
+  {name:"Ortopedia", emojis:["🏋️","⚽","🔨","🦴"]},
+  {name:"Dermatologia", emojis:["☀️","🧴","💅","🪞"]},
+  {name:"Psiquiatria", emojis:["🛋️","👂","🧠","💊"]},
+  {name:"Cirurgia Geral", emojis:["⏰","🔪","🩸","💪"]},
+  {name:"Anestesiologia", emojis:["😴","📱","💉","🛌"]},
+  {name:"Pediatria", emojis:["🧸","🍭","😭","👶"]},
+  {name:"Ginecologia e Obstetrícia", emojis:["🌙","🤰","👶","🩺"]},
+  {name:"Radiologia", emojis:["🌑","📷","🩻","🖥️"]},
+  {name:"Oftalmologia", emojis:["🔦","👓","👁️","⏱️"]},
+  {name:"Medicina de Família e Comunidade", emojis:["☕","🏠","👨‍👩‍👧","🚲"]},
+  {name:"Urologia", emojis:["💧","🚹","🔬","🩺"]},
+  {name:"Patologia", emojis:["🔬","🧫","🧪","☠️"]}
+];
+
+/* =================================================================
+   HELPERS COMPARTILHADOS
+================================================================= */
+function copyToClipboard(text, btn, defaultLabel){
+  const done = () => {
+    btn.classList.add('copied');
+    btn.textContent = 'Copiado ✓';
+    setTimeout(() => { btn.classList.remove('copied'); btn.textContent = defaultLabel; }, 1800);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+  } else {
+    fallbackCopy(text, done);
+  }
+}
+function fallbackCopy(text, done){
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); }catch(e){}
+  document.body.removeChild(ta);
+  done();
+}
+function normText(s){ return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); }
+function setupAutocomplete(inputEl, suggEl, getPool, onEnterSubmit){
+  let hlIndex = -1;
+  function currentOptions(){
+    const q = normText(inputEl.value.trim());
+    const avail = getPool();
+    return q ? avail.filter(n => normText(n).includes(q)) : avail;
+  }
+  function render(){
+    const opts = currentOptions();
+    hlIndex = -1;
+    suggEl.innerHTML = opts.length
+      ? opts.map(n => `<li data-name="${n}">${n}</li>`).join('')
+      : '<li class="empty">nenhum resultado encontrado</li>';
+    suggEl.classList.add('show');
+  }
+  function hide(){ suggEl.classList.remove('show'); }
+  function select(name){ inputEl.value = name; hide(); inputEl.focus(); }
+  inputEl.addEventListener('focus', render);
+  inputEl.addEventListener('input', render);
+  suggEl.addEventListener('click', e => {
+    const li = e.target.closest('li[data-name]');
+    if(li) select(li.dataset.name);
+  });
+  inputEl.addEventListener('keydown', e => {
+    const items = [...suggEl.querySelectorAll('li[data-name]')];
+    if(e.key === 'ArrowDown' && items.length){
+      e.preventDefault(); hlIndex = Math.min(hlIndex+1, items.length-1);
+      items.forEach((li,i)=>li.classList.toggle('hl', i===hlIndex));
+      items[hlIndex].scrollIntoView({block:'nearest'});
+    } else if(e.key === 'ArrowUp' && items.length){
+      e.preventDefault(); hlIndex = Math.max(hlIndex-1, 0);
+      items.forEach((li,i)=>li.classList.toggle('hl', i===hlIndex));
+      items[hlIndex].scrollIntoView({block:'nearest'});
+    } else if(e.key === 'Enter'){
+      if(hlIndex >= 0 && items[hlIndex]){ e.preventDefault(); select(items[hlIndex].dataset.name); }
+      else { onEnterSubmit(); }
+    } else if(e.key === 'Escape'){
+      hide();
+    }
+  });
+  document.addEventListener('click', e => {
+    if(!inputEl.closest('.autocomplete-wrapper').contains(e.target)) hide();
+  });
+  return { hide };
+}
+function startCountdownFor(countdownEl){
+  function tick(){
+    const ms = msUntilNextMidnightBR();
+    const h = String(Math.floor(ms/3600000)).padStart(2,'0');
+    const m = String(Math.floor((ms%3600000)/60000)).padStart(2,'0');
+    const s = String(Math.floor((ms%60000)/1000)).padStart(2,'0');
+    countdownEl.textContent = `${h}:${m}:${s}`;
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+function popResult(resultEl){
+  resultEl.classList.remove('show');
+  void resultEl.offsetWidth;
+  resultEl.classList.add('show');
+  requestAnimationFrame(() => resultEl.scrollIntoView({behavior:'smooth', block:'center'}));
+}
+
+// Data de hoje fixada no fuso de Brasília, independente do fuso/relógio do aparelho do jogador
+const BR_TZ = 'America/Sao_Paulo';
+function todayKeyBR(){
+  return new Intl.DateTimeFormat('en-CA', {timeZone: BR_TZ, year:'numeric', month:'2-digit', day:'2-digit'}).format(new Date());
+}
+function dayIndexFromKey(dateKey, len){
+  const [y,m,d] = dateKey.split('-').map(Number);
+  const utcDate = Date.UTC(y, m-1, d);
+  const epoch = Date.UTC(2026,0,1);
+  const diff = Math.floor((utcDate - epoch) / 86400000);
+  return ((diff % len) + len) % len;
+}
+function msUntilNextMidnightBR(){
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: BR_TZ, hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
+  }).formatToParts(now).reduce((acc,p)=>{acc[p.type]=p.value; return acc;}, {});
+  const secondsToday = (+parts.hour)*3600 + (+parts.minute)*60 + (+parts.second);
+  return (86400 - secondsToday) * 1000;
+}
+
+document.getElementById('chartNo').textContent = String(1000 + dayIndexFromKey(todayKeyBR(), 365)).padStart(4,'0');
+
+/* =================================================================
+   MODO 1: DOENÇA DO DIA
+================================================================= */
+(function(){
+  const MAX_TRIES = 8, STAGGER = 200, FLIP_DURATION = 550;
+  const STORAGE_KEY = 'doctle_doenca_v1';
+  let target, tries, gameOver, animating, guessedNames, guessLog, dateKey;
+
+  const rowsEl = document.getElementById('doencaRows');
+  const inputEl = document.getElementById('doencaInput');
+  const btnEl = document.getElementById('doencaBtn');
+  const suggEl = document.getElementById('doencaSuggestions');
+  const statusEl = document.getElementById('doencaStatus');
+  const resultEl = document.getElementById('doencaResult');
+  const stampEl = document.getElementById('doencaStamp');
+  const titleEl = document.getElementById('doencaTitle');
+  const textEl = document.getElementById('doencaText');
+  const shareBtn = document.getElementById('doencaShareBtn');
+  const sharePreview = document.getElementById('doencaSharePreview');
+  const nextCaseEl = document.getElementById('doencaNextCase');
+  const countdownEl = document.getElementById('doencaCountdown');
+
+  function norm(s){ return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); }
+
+  /* ---- autocomplete próprio (não depende de <datalist>) ---- */
+  let hlIndex = -1;
+  function currentOptions(){
+    const q = norm(inputEl.value.trim());
+    const avail = diseases.filter(d => !guessedNames.has(d.name));
+    if(!q) return avail;
+    return avail.filter(d => norm(d.name).includes(q));
+  }
+  function renderSuggestions(){
+    const opts = currentOptions();
+    hlIndex = -1;
+    if(opts.length === 0){
+      suggEl.innerHTML = '<li class="empty">nenhuma doença encontrada</li>';
+    } else {
+      suggEl.innerHTML = opts.map(d => `<li data-name="${d.name}">${d.name}</li>`).join('');
+    }
+    suggEl.classList.add('show');
+  }
+  function hideSuggestions(){ suggEl.classList.remove('show'); }
+  function selectSuggestion(name){
+    inputEl.value = name;
+    hideSuggestions();
+    inputEl.focus();
+  }
+  inputEl.addEventListener('focus', () => { if(!gameOver) renderSuggestions(); });
+  inputEl.addEventListener('input', () => { if(!gameOver) renderSuggestions(); });
+  suggEl.addEventListener('click', e => {
+    const li = e.target.closest('li[data-name]');
+    if(li) selectSuggestion(li.dataset.name);
+  });
+  inputEl.addEventListener('keydown', e => {
+    const items = [...suggEl.querySelectorAll('li[data-name]')];
+    if(e.key === 'ArrowDown' && items.length){
+      e.preventDefault(); hlIndex = Math.min(hlIndex+1, items.length-1);
+      items.forEach((li,i)=>li.classList.toggle('hl', i===hlIndex));
+      items[hlIndex].scrollIntoView({block:'nearest'});
+    } else if(e.key === 'ArrowUp' && items.length){
+      e.preventDefault(); hlIndex = Math.max(hlIndex-1, 0);
+      items.forEach((li,i)=>li.classList.toggle('hl', i===hlIndex));
+      items[hlIndex].scrollIntoView({block:'nearest'});
+    } else if(e.key === 'Enter'){
+      if(hlIndex >= 0 && items[hlIndex]){ selectSuggestion(items[hlIndex].dataset.name); }
+      else { submitGuess(); }
+    } else if(e.key === 'Escape'){
+      hideSuggestions();
+    }
+  });
+  document.addEventListener('click', e => {
+    if(!e.target.closest('.autocomplete-wrapper')) hideSuggestions();
+  });
+
+  function renderEmptyRows(){
+    rowsEl.innerHTML = '';
+    for(let i=tries; i<MAX_TRIES; i++){
+      const row = document.createElement('div');
+      row.className = 'row empty-row';
+      row.innerHTML = Array(7).fill('<div class="cell"></div>').join('');
+      rowsEl.appendChild(row);
+    }
+  }
+  function yearHint(g,t){ return g===t ? {cls:'correct',arrow:''} : {cls:'partial', arrow: g<t?'▲':'▼'}; }
+  function incHint(g,t){ return g===t ? {cls:'correct',arrow:''} : {cls:'partial', arrow: g<t?'▲':'▼'}; }
+  function fmtInc(v){ return v<1 ? v.toFixed(2) : v; }
+
+  function buildCellData(guess){
+    const yh = yearHint(guess.ano, target.ano);
+    const ih = incHint(guess.incidencia, target.incidencia);
+    return [
+      {label:'Doença', text:guess.name, cls:'name'},
+      {label:'Categoria', text:guess.categoria, cls:guess.categoria===target.categoria?'correct':'wrong'},
+      {label:'Cura', text:guess.cura, cls:guess.cura===target.cura?'correct':'wrong'},
+      {label:'Contágio', text:guess.contagio, cls:guess.contagio===target.contagio?'correct':'wrong'},
+      {label:'Sistema', text:guess.sistema, cls:guess.sistema===target.sistema?'correct':'wrong'},
+      {label:'Ano', text:guess.ano, cls:yh.cls, arrow:yh.arrow},
+      {label:'Incidência', text:fmtInc(guess.incidencia)+'<span class="unit">/100mil</span>', cls:ih.cls, arrow:ih.arrow}
+    ];
+  }
+  function revealRow(cellsData, onDone, instant){
+    const firstEmpty = rowsEl.querySelector('.empty-row');
+    const row = document.createElement('div');
+    row.className = 'row';
+    const cellEls = cellsData.map(d => {
+      const el = document.createElement('div');
+      el.className = 'cell pending';
+      el.setAttribute('data-label', d.label);
+      row.appendChild(el);
+      return el;
+    });
+    rowsEl.replaceChild(row, firstEmpty);
+    if(instant){
+      cellsData.forEach((d,i) => {
+        cellEls[i].classList.remove('pending');
+        cellEls[i].classList.add(d.cls);
+        cellEls[i].innerHTML = d.text + (d.arrow ? `<span class="arrow">${d.arrow}</span>` : '');
+      });
+      if(onDone) onDone();
+      return;
+    }
+    cellsData.forEach((d,i) => {
+      setTimeout(() => {
+        cellEls[i].classList.add('flip-anim');
+        setTimeout(() => {
+          cellEls[i].classList.remove('pending');
+          cellEls[i].classList.add(d.cls);
+          cellEls[i].innerHTML = d.text + (d.arrow ? `<span class="arrow">${d.arrow}</span>` : '');
+        }, FLIP_DURATION/2);
+      }, i*STAGGER);
+    });
+    setTimeout(onDone, (cellsData.length-1)*STAGGER + FLIP_DURATION + 80);
+  }
+  function squareFor(c){
+    let sq = c.cls==='correct' ? '🟩' : (c.cls==='partial' ? '🟧' : '🟥');
+    if(c.arrow) sq += (c.arrow==='▲' ? '⬆️' : '⬇️');
+    return sq;
+  }
+  function buildShareText(won){
+    const headline = won
+      ? `Diagnostiquei a doença do dia #DOCTLE na ${tries}ª tentativa 🩺`
+      : `Não fechei o diagnóstico #DOCTLE em ${MAX_TRIES} tentativas 🩺`;
+    const gridLines = guessLog.map(row => row.slice(1).map(squareFor).join(''));
+    return headline + '\n' + gridLines.join('\n');
+  }
+
+  /* ---- persistência local (uma tentativa por dia, sobrevive a refresh) ---- */
+  function saveState(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        dateKey, guesses: [...guessedNames], gameOver
+      }));
+    }catch(e){ /* localStorage indisponível — jogo segue funcionando, só sem persistir */ }
+  }
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return null;
+      const data = JSON.parse(raw);
+      if(data.dateKey !== dateKey) return null; // dia diferente, estado antigo não vale
+      return data;
+    }catch(e){ return null; }
+  }
+
+  function submitGuess(){
+    if(gameOver || animating) return;
+    const val = inputEl.value.trim();
+    const guess = diseases.find(d => d.name.toLowerCase()===val.toLowerCase());
+    if(!guess || guessedNames.has(guess.name)){
+      inputEl.style.borderColor = 'var(--wrong)';
+      setTimeout(()=> inputEl.style.borderColor='var(--ink)', 700);
+      return;
+    }
+    hideSuggestions();
+    tries++; guessedNames.add(guess.name); animating = true;
+    inputEl.disabled = true; btnEl.disabled = true; inputEl.value = '';
+    statusEl.textContent = `Tentativa ${tries} de ${MAX_TRIES}`;
+    const cellsData = buildCellData(guess);
+    guessLog.push(cellsData);
+    revealRow(cellsData, () => {
+      animating = false;
+      const won = guess.name === target.name;
+      saveState();
+      if(won || tries >= MAX_TRIES){ endGame(won); }
+      else { inputEl.disabled = false; btnEl.disabled = false; inputEl.focus(); }
+    });
+  }
+
+  function startCountdown(){
+    function tick(){
+      const ms = msUntilNextMidnightBR();
+      const h = String(Math.floor(ms/3600000)).padStart(2,'0');
+      const m = String(Math.floor((ms%3600000)/60000)).padStart(2,'0');
+      const s = String(Math.floor((ms%60000)/1000)).padStart(2,'0');
+      countdownEl.textContent = `${h}:${m}:${s}`;
+    }
+    tick();
+    setInterval(tick, 1000);
+  }
+  let countdownStarted = false;
+
+  function endGame(won){
+    gameOver = true; inputEl.disabled = true; btnEl.disabled = true; hideSuggestions();
+    saveState();
+    if(won){
+      stampEl.textContent='DIAGNOSTICADO'; stampEl.className='stamp win';
+      titleEl.textContent=`Correto — ${target.name}`;
+      textEl.textContent=`Você fechou o diagnóstico em ${tries} tentativa(s).`;
+    } else {
+      stampEl.textContent='CASO ENCERRADO'; stampEl.className='stamp lose';
+      titleEl.textContent=`Não foi dessa vez — era ${target.name}`;
+      textEl.textContent=`Categoria: ${target.categoria} · Cura: ${target.cura} · Contágio: ${target.contagio} · Sistema: ${target.sistema} · Ano: ${target.ano} · Incidência: ${fmtInc(target.incidencia)}/100mil`;
+    }
+    popResult(resultEl);
+    nextCaseEl.style.display = 'block';
+    if(!countdownStarted){ startCountdown(); countdownStarted = true; }
+    const shareText = buildShareText(won);
+    sharePreview.textContent = shareText;
+    shareBtn.onclick = () => { sharePreview.classList.add('show'); copyToClipboard(shareText, shareBtn, 'Copiar resultado'); };
+  }
+
+  function init(){
+    dateKey = todayKeyBR();
+    target = diseases[dayIndexFromKey(dateKey, diseases.length)];
+    tries=0; gameOver=false; animating=false; guessedNames=new Set(); guessLog=[];
+    resultEl.classList.remove('show'); sharePreview.classList.remove('show');
+    shareBtn.classList.remove('copied'); shareBtn.textContent='Copiar resultado';
+    nextCaseEl.style.display = 'none';
+    inputEl.value=''; inputEl.disabled=false; btnEl.disabled=false;
+    statusEl.textContent = `Tentativa 0 de ${MAX_TRIES}`;
+    renderEmptyRows();
+
+    const saved = loadState();
+    if(saved && saved.guesses && saved.guesses.length){
+      saved.guesses.forEach(name => {
+        const guess = diseases.find(d => d.name === name);
+        if(!guess) return;
+        tries++; guessedNames.add(name);
+        const cellsData = buildCellData(guess);
+        guessLog.push(cellsData);
+        revealRow(cellsData, null, true);
+      });
+      statusEl.textContent = `Tentativa ${tries} de ${MAX_TRIES}`;
+      if(saved.gameOver){
+        const lastGuessName = saved.guesses[saved.guesses.length-1];
+        const won = lastGuessName === target.name;
+        endGame(won);
+      }
+    }
+  }
+  btnEl.addEventListener('click', submitGuess);
+  init();
+})();
+
+/* =================================================================
+   MODO 2: EXAME DO DIA
+================================================================= */
+(function(){
+  const STORAGE_KEY = 'doctle_exame_v1';
+  let target, tries, gameOver, guessedNames, wrongNames, dateKey;
+
+  const inputEl = document.getElementById('exameInput');
+  const btnEl = document.getElementById('exameBtn');
+  const suggEl = document.getElementById('exameSuggestions');
+  const statusEl = document.getElementById('exameStatus');
+  const clueListEl = document.getElementById('clueList');
+  const chipsEl = document.getElementById('exameWrongChips');
+  const resultEl = document.getElementById('exameResult');
+  const stampEl = document.getElementById('exameStamp');
+  const titleEl = document.getElementById('exameTitle');
+  const textEl = document.getElementById('exameText');
+  const shareBtn = document.getElementById('exameShareBtn');
+  const sharePreview = document.getElementById('exameSharePreview');
+  const nextCaseEl = document.getElementById('exameNextCase');
+  const countdownEl = document.getElementById('exameCountdown');
+  let countdownStarted = false;
+
+  const autocomplete = setupAutocomplete(
+    inputEl, suggEl,
+    () => exames.filter(e => !guessedNames.has(e.name)).map(e => e.name),
+    () => submitGuess()
+  );
+
+  function renderClues(revealedCount, animateLast){
+    clueListEl.innerHTML = '';
+    for(let i=0;i<revealedCount;i++){
+      const card = document.createElement('div');
+      card.className = 'clue-card';
+      if(!(animateLast && i===revealedCount-1)) card.style.animation = 'none';
+      card.innerHTML = `<span class="clue-num">Pista ${i+1}</span>${target.clues[i]}`;
+      clueListEl.appendChild(card);
+    }
+  }
+  function renderChips(){
+    chipsEl.innerHTML = [...wrongNames].map(n => `<span class="chip">${n}</span>`).join('');
+  }
+  function saveState(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ dateKey, guesses: [...guessedNames], gameOver }));
+    }catch(e){}
+  }
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return null;
+      const data = JSON.parse(raw);
+      return data.dateKey === dateKey ? data : null;
+    }catch(e){ return null; }
+  }
+  function submitGuess(){
+    if(gameOver) return;
+    const val = inputEl.value.trim();
+    const guess = exames.find(e => e.name.toLowerCase()===val.toLowerCase());
+    if(!guess || guessedNames.has(guess.name)){
+      inputEl.style.borderColor='var(--wrong)';
+      setTimeout(()=> inputEl.style.borderColor='var(--ink)', 700);
+      return;
+    }
+    autocomplete.hide();
+    tries++; guessedNames.add(guess.name);
+    inputEl.value='';
+    const won = guess.name === target.name;
+    if(won){
+      statusEl.textContent = `Pista ${Math.min(tries, target.clues.length)} de ${target.clues.length}`;
+      renderClues(Math.min(tries, target.clues.length), false);
+      saveState();
+      endGame(true);
+      return;
+    }
+    wrongNames.add(guess.name);
+    renderChips();
+    if(tries >= target.clues.length){
+      renderClues(target.clues.length, false);
+      statusEl.textContent = `Pista ${target.clues.length} de ${target.clues.length}`;
+      saveState();
+      endGame(false);
+    } else {
+      const revealedCount = tries + 1;
+      renderClues(revealedCount, true);
+      statusEl.textContent = `Pista ${revealedCount} de ${target.clues.length}`;
+      saveState();
+    }
+  }
+  function buildShareText(won){
+    const headline = won
+      ? `Identifiquei o exame do dia #DOCTLE com ${tries===0?1:tries} pista(s) 🩻`
+      : `Não identifiquei o exame do dia #DOCTLE (${target.clues.length} pistas) 🩻`;
+    const squares = Array(tries).fill('🟥');
+    if(won) squares[squares.length-1] = '🟩';
+    return headline + '\n' + squares.join('');
+  }
+  function endGame(won){
+    gameOver = true; inputEl.disabled = true; btnEl.disabled = true; autocomplete.hide();
+    saveState();
+    if(won){
+      stampEl.textContent='LAUDO CONCLUÍDO'; stampEl.className='stamp win';
+      titleEl.textContent=`Correto — ${target.name}`;
+      textEl.textContent=`Você identificou o exame com ${tries} tentativa(s).`;
+    } else {
+      stampEl.textContent='LAUDO INCONCLUSIVO'; stampEl.className='stamp lose';
+      titleEl.textContent=`Não foi dessa vez — era ${target.name}`;
+      textEl.textContent=`As pistas completas: ${target.clues.join(' · ')}`;
+    }
+    popResult(resultEl);
+    nextCaseEl.style.display = 'block';
+    if(!countdownStarted){ startCountdownFor(countdownEl); countdownStarted = true; }
+    const shareText = buildShareText(won);
+    sharePreview.textContent = shareText;
+    shareBtn.onclick = () => { sharePreview.classList.add('show'); copyToClipboard(shareText, shareBtn, 'Copiar resultado'); };
+  }
+  function init(){
+    dateKey = todayKeyBR();
+    target = exames[dayIndexFromKey(dateKey, exames.length)];
+    tries=0; gameOver=false; guessedNames=new Set(); wrongNames=new Set();
+    resultEl.classList.remove('show'); sharePreview.classList.remove('show');
+    shareBtn.classList.remove('copied'); shareBtn.textContent='Copiar resultado';
+    nextCaseEl.style.display = 'none';
+    inputEl.value=''; inputEl.disabled=false; btnEl.disabled=false;
+    statusEl.textContent = `Pista 1 de ${target.clues.length}`;
+    renderClues(1, false); renderChips();
+
+    const saved = loadState();
+    if(saved && saved.guesses && saved.guesses.length){
+      saved.guesses.forEach(name => {
+        const guess = exames.find(e => e.name === name);
+        if(!guess) return;
+        tries++; guessedNames.add(name);
+        if(name !== target.name) wrongNames.add(name);
+      });
+      renderChips();
+      const revealedCount = Math.min(tries, target.clues.length);
+      renderClues(revealedCount, false);
+      statusEl.textContent = `Pista ${revealedCount} de ${target.clues.length}`;
+      if(saved.gameOver){
+        const lastGuessName = saved.guesses[saved.guesses.length-1];
+        endGame(lastGuessName === target.name);
+      }
+    }
+  }
+  btnEl.addEventListener('click', submitGuess);
+  init();
+})();
+
+/* =================================================================
+   MODO 3: RESIDÊNCIA DO DIA
+================================================================= */
+(function(){
+  const STORAGE_KEY = 'doctle_residencia_v1';
+  let target, tries, gameOver, guessedNames, wrongNames, dateKey;
+
+  const inputEl = document.getElementById('residenciaInput');
+  const btnEl = document.getElementById('residenciaBtn');
+  const suggEl = document.getElementById('residenciaSuggestions');
+  const statusEl = document.getElementById('residenciaStatus');
+  const emojiRowEl = document.getElementById('emojiRow');
+  const chipsEl = document.getElementById('residenciaWrongChips');
+  const resultEl = document.getElementById('residenciaResult');
+  const stampEl = document.getElementById('residenciaStamp');
+  const titleEl = document.getElementById('residenciaTitle');
+  const textEl = document.getElementById('residenciaText');
+  const shareBtn = document.getElementById('residenciaShareBtn');
+  const sharePreview = document.getElementById('residenciaSharePreview');
+  const nextCaseEl = document.getElementById('residenciaNextCase');
+  const countdownEl = document.getElementById('residenciaCountdown');
+  let countdownStarted = false;
+
+  const autocomplete = setupAutocomplete(
+    inputEl, suggEl,
+    () => residencias.filter(r => !guessedNames.has(r.name)).map(r => r.name),
+    () => submitGuess()
+  );
+
+  function renderEmojis(revealedCount){
+    emojiRowEl.innerHTML = '';
+    for(let i=0;i<target.emojis.length;i++){
+      const tile = document.createElement('div');
+      if(i < revealedCount){
+        tile.className = 'emoji-tile' + (i===revealedCount-1 ? ' revealed' : '');
+        tile.textContent = target.emojis[i];
+      } else {
+        tile.className = 'emoji-tile placeholder';
+        tile.textContent = '?';
+      }
+      emojiRowEl.appendChild(tile);
+    }
+  }
+  function renderChips(){
+    chipsEl.innerHTML = [...wrongNames].map(n => `<span class="chip">${n}</span>`).join('');
+  }
+  function saveState(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ dateKey, guesses: [...guessedNames], gameOver }));
+    }catch(e){}
+  }
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return null;
+      const data = JSON.parse(raw);
+      return data.dateKey === dateKey ? data : null;
+    }catch(e){ return null; }
+  }
+  function submitGuess(){
+    if(gameOver) return;
+    const val = inputEl.value.trim();
+    const guess = residencias.find(r => r.name.toLowerCase()===val.toLowerCase());
+    if(!guess || guessedNames.has(guess.name)){
+      inputEl.style.borderColor='var(--wrong)';
+      setTimeout(()=> inputEl.style.borderColor='var(--ink)', 700);
+      return;
+    }
+    autocomplete.hide();
+    tries++; guessedNames.add(guess.name);
+    inputEl.value='';
+    const won = guess.name === target.name;
+    if(won){
+      renderEmojis(Math.min(tries, target.emojis.length));
+      statusEl.textContent = `Emoji ${Math.min(tries, target.emojis.length)} de ${target.emojis.length}`;
+      saveState();
+      endGame(true);
+      return;
+    }
+    wrongNames.add(guess.name);
+    renderChips();
+    if(tries >= target.emojis.length){
+      renderEmojis(target.emojis.length);
+      statusEl.textContent = `Emoji ${target.emojis.length} de ${target.emojis.length}`;
+      saveState();
+      endGame(false);
+    } else {
+      const revealedCount = tries + 1;
+      renderEmojis(revealedCount);
+      statusEl.textContent = `Emoji ${revealedCount} de ${target.emojis.length}`;
+      saveState();
+    }
+  }
+  function buildShareText(won){
+    const revealed = target.emojis.slice(0, Math.min(Math.max(tries,1), target.emojis.length)).join('');
+    const headline = won
+      ? `Acertei a residência médica #DOCTLE com ${tries} emoji(s) 🔨`
+      : `Fiquei na dúvida na residência médica #DOCTLE 🔨`;
+    return headline + '\n' + revealed;
+  }
+  function endGame(won){
+    gameOver = true; inputEl.disabled = true; btnEl.disabled = true; autocomplete.hide();
+    saveState();
+    if(won){
+      stampEl.textContent='BATEU O MARTELO'; stampEl.className='stamp win';
+      titleEl.textContent=`Correto — ${target.name}`;
+      textEl.textContent=`Você acertou a especialidade com ${tries} tentativa(s).`;
+    } else {
+      stampEl.textContent='ENCAMINHADO PRA OUTRA ÁREA'; stampEl.className='stamp lose';
+      titleEl.textContent=`Não foi dessa vez — era ${target.name}`;
+      textEl.textContent=`Os emojis completos: ${target.emojis.join(' ')}`;
+    }
+    popResult(resultEl);
+    nextCaseEl.style.display = 'block';
+    if(!countdownStarted){ startCountdownFor(countdownEl); countdownStarted = true; }
+    const shareText = buildShareText(won);
+    sharePreview.textContent = shareText;
+    shareBtn.onclick = () => { sharePreview.classList.add('show'); copyToClipboard(shareText, shareBtn, 'Copiar resultado'); };
+  }
+  function init(){
+    dateKey = todayKeyBR();
+    target = residencias[dayIndexFromKey(dateKey, residencias.length)];
+    tries=0; gameOver=false; guessedNames=new Set(); wrongNames=new Set();
+    resultEl.classList.remove('show'); sharePreview.classList.remove('show');
+    shareBtn.classList.remove('copied'); shareBtn.textContent='Copiar resultado';
+    nextCaseEl.style.display = 'none';
+    inputEl.value=''; inputEl.disabled=false; btnEl.disabled=false;
+    statusEl.textContent = `Emoji 1 de ${target.emojis.length}`;
+    renderEmojis(1); renderChips();
+
+    const saved = loadState();
+    if(saved && saved.guesses && saved.guesses.length){
+      saved.guesses.forEach(name => {
+        const guess = residencias.find(r => r.name === name);
+        if(!guess) return;
+        tries++; guessedNames.add(name);
+        if(name !== target.name) wrongNames.add(name);
+      });
+      renderChips();
+      const revealedCount = Math.min(tries, target.emojis.length);
+      renderEmojis(revealedCount);
+      statusEl.textContent = `Emoji ${revealedCount} de ${target.emojis.length}`;
+      if(saved.gameOver){
+        const lastGuessName = saved.guesses[saved.guesses.length-1];
+        endGame(lastGuessName === target.name);
+      }
+    }
+  }
+  btnEl.addEventListener('click', submitGuess);
+  init();
+})();
+
+/* =================================================================
+   TABS
+================================================================= */
+const taglines = {
+  doenca: "descubra a doença do dia — atributos revelam a cada tentativa",
+  exame: "descubra o exame do dia — a cada erro, uma pista nova é liberada",
+  residencia: "descubra a residência médica do dia pelos emojis — modo bem-humorado"
+};
+document.querySelectorAll('.mode-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const mode = tab.dataset.mode;
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t===tab));
+    document.querySelectorAll('.mode-panel').forEach(p => p.classList.toggle('active', p.dataset.mode===mode));
+    document.getElementById('modeTagline').textContent = taglines[mode];
+  });
+});
+</script>
+</body>
+</html>
