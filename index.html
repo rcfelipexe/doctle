@@ -11,14 +11,14 @@
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 
 <meta property="og:type" content="website">
-<meta property="og:title" content="DOCTLE — o jogo diário de medicina">
+<meta property="og:title" content="DOCTLE -o jogo diário de medicina">
 <meta property="og:description" content="Descubra a doença, o exame e a residência médica do dia.">
 <meta property="og:image" content="og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="DOCTLE — o jogo diário de medicina">
+<meta name="twitter:title" content="DOCTLE -o jogo diário de medicina">
 <meta name="twitter:description" content="Descubra a doença, o exame e a residência médica do dia.">
 <meta name="twitter:image" content="og-image.png">
 
@@ -361,7 +361,7 @@
   <header>
     <div class="brand-block">
       <h1>DOCTLE</h1>
-      <p id="modeTagline">descubra a doença do dia — atributos revelam a cada tentativa</p>
+      <p id="modeTagline">descubra a doença do dia - atributos revelam a cada tentativa</p>
     </div>
     <div class="chart-no">PRONTUÁRIO Nº <b id="chartNo">0000</b></div>
   </header>
@@ -862,7 +862,7 @@ document.getElementById('chartNo').textContent = String(1000 + dayIndexFromKey(t
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         dateKey, guesses: [...guessedNames], gameOver
       }));
-    }catch(e){ /* localStorage indisponível — jogo segue funcionando, só sem persistir */ }
+    }catch(e){ /* localStorage indisponível -jogo segue funcionando, só sem persistir */ }
   }
   function loadState(){
     try{
@@ -916,11 +916,11 @@ document.getElementById('chartNo').textContent = String(1000 + dayIndexFromKey(t
     saveState();
     if(won){
       stampEl.textContent='DIAGNOSTICADO'; stampEl.className='stamp win';
-      titleEl.textContent=`Correto — ${target.name}`;
+      titleEl.textContent=`Correto - ${target.name}`;
       textEl.textContent=`Você fechou o diagnóstico em ${tries} tentativa(s).`;
     } else {
       stampEl.textContent='CASO ENCERRADO'; stampEl.className='stamp lose';
-      titleEl.textContent=`Não foi dessa vez — era ${target.name}`;
+      titleEl.textContent=`Não foi dessa vez - era ${target.name}`;
       textEl.textContent=`Categoria: ${target.categoria} · Cura: ${target.cura} · Contágio: ${target.contagio} · Sistema: ${target.sistema} · Ano: ${target.ano} · Incidência: ${fmtInc(target.incidencia)}/100mil`;
     }
     popResult(resultEl);
@@ -1066,11 +1066,11 @@ document.getElementById('chartNo').textContent = String(1000 + dayIndexFromKey(t
     saveState();
     if(won){
       stampEl.textContent='LAUDO CONCLUÍDO'; stampEl.className='stamp win';
-      titleEl.textContent=`Correto — ${target.name}`;
+      titleEl.textContent=`Correto - ${target.name}`;
       textEl.textContent=`Você identificou o exame com ${tries} tentativa(s).`;
     } else {
       stampEl.textContent='LAUDO INCONCLUSIVO'; stampEl.className='stamp lose';
-      titleEl.textContent=`Não foi dessa vez — era ${target.name}`;
+      titleEl.textContent=`Não foi dessa vez - era ${target.name}`;
       textEl.textContent=`As pistas completas: ${target.clues.join(' · ')}`;
     }
     popResult(resultEl);
@@ -1218,11 +1218,11 @@ document.getElementById('chartNo').textContent = String(1000 + dayIndexFromKey(t
     saveState();
     if(won){
       stampEl.textContent='BATEU O MARTELO'; stampEl.className='stamp win';
-      titleEl.textContent=`Correto — ${target.name}`;
+      titleEl.textContent=`Correto - ${target.name}`;
       textEl.textContent=`Você acertou a especialidade com ${tries} tentativa(s).`;
     } else {
       stampEl.textContent='ENCAMINHADO PRA OUTRA ÁREA'; stampEl.className='stamp lose';
-      titleEl.textContent=`Não foi dessa vez — era ${target.name}`;
+      titleEl.textContent=`Não foi dessa vez - era ${target.name}`;
       textEl.textContent=`Os emojis completos: ${target.emojis.join(' ')}`;
     }
     popResult(resultEl);
@@ -1269,9 +1269,9 @@ document.getElementById('chartNo').textContent = String(1000 + dayIndexFromKey(t
    TABS
 ================================================================= */
 const taglines = {
-  doenca: "descubra a doença do dia — atributos revelam a cada tentativa",
-  exame: "descubra o exame do dia — a cada erro, uma pista nova é liberada",
-  residencia: "descubra a residência médica do dia pelos emojis — modo bem-humorado"
+  doenca: "descubra a doença do dia - atributos revelam a cada tentativa",
+  exame: "descubra o exame do dia - a cada erro, uma pista nova é liberada",
+  residencia: "descubra a residência médica do dia pelos emojis -modo bem-humorado"
 };
 document.querySelectorAll('.mode-tab').forEach(tab => {
   tab.addEventListener('click', () => {
