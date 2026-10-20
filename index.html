@@ -991,8 +991,8 @@ document.getElementById('chartNo').textContent = String(1000 + dayIndexFromKey(t
   }
   function buildShareText(won){
     const headline = won
-      ? `Diagnostiquei a doença do dia #DOCTLE na ${tries}ª tentativa 🩺`
-      : `Não fechei o diagnóstico #DOCTLE em ${MAX_TRIES} tentativas 🩺`;
+      ? `Diagnostiquei a doença do dia #DOCTLE na ${tries}ª tentativa 🩺 - https://rcfelipexe.github.io/doctle/`
+      : `Não fechei o diagnóstico #DOCTLE em ${MAX_TRIES} tentativas 🩺- https://rcfelipexe.github.io/doctle/`;
     const gridLines = guessLog.map(row => row.slice(1).map(squareFor).join(''));
     return headline + '\n' + gridLines.join('\n');
   }
@@ -1200,8 +1200,8 @@ document.getElementById('chartNo').textContent = String(1000 + dayIndexFromKey(t
   }
   function buildShareText(won){
     const headline = won
-      ? `Identifiquei o exame do dia #DOCTLE com ${tries===0?1:tries} pista(s) 🩻`
-      : `Não identifiquei o exame do dia #DOCTLE (${target.clues.length} pistas) 🩻`;
+      ? `Identifiquei o exame do dia #DOCTLE com ${tries===0?1:tries} pista(s) 🩻 - https://rcfelipexe.github.io/doctle/`
+      : `Não identifiquei o exame do dia #DOCTLE (${target.clues.length} pistas) 🩻 - https://rcfelipexe.github.io/doctle/`;
     const squares = Array(tries).fill('🟥');
     if(won) squares[squares.length-1] = '🟩';
     return headline + '\n' + squares.join('');
@@ -1358,8 +1358,8 @@ document.getElementById('chartNo').textContent = String(1000 + dayIndexFromKey(t
   function buildShareText(won){
     const revealed = target.emojis.slice(0, Math.min(Math.max(tries,1), target.emojis.length)).join('');
     const headline = won
-      ? `Acertei a residência médica #DOCTLE com ${tries} emoji(s) 🔨`
-      : `Fiquei na dúvida na residência médica #DOCTLE 🔨`;
+      ? `Acertei a residência médica #DOCTLE com ${tries} emoji(s) 🔨 - https://rcfelipexe.github.io/doctle/`
+      : `Fiquei na dúvida na residência médica #DOCTLE 🔨 - https://rcfelipexe.github.io/doctle/`;
     return headline + '\n' + revealed;
   }
   const STATS_CFG = () => ({ statsKey:'doctle_residencia_stats_v1', maxTries:target.emojis.length, title:'Estatísticas - Residência do dia', accent:'var(--res)' });
