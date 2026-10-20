@@ -3,22 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DOCTLE - o jogo diário de medicina</title>
-<meta name="description" content="Descubra a doença, o exame e a residência médica do dia.">
+<title>DOCTLE — o jogo diário de medicina</title>
+<meta name="description" content="Descubra a doença, o exame e a residência médica do dia. Um jogo diário estilo Wordle para estudantes de medicina.">
 
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 
 <meta property="og:type" content="website">
-<meta property="og:title" content="DOCTLE -o jogo diário de medicina">
-<meta property="og:description" content="Descubra a doença, o exame e a residência médica do dia.">
+<meta property="og:title" content="DOCTLE — o jogo diário de medicina">
+<meta property="og:description" content="Descubra a doença, o exame e a residência médica do dia. Um jogo diário estilo Wordle para estudantes de medicina.">
 <meta property="og:image" content="og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="DOCTLE -o jogo diário de medicina">
+<meta name="twitter:title" content="DOCTLE — o jogo diário de medicina">
 <meta name="twitter:description" content="Descubra a doença, o exame e a residência médica do dia.">
 <meta name="twitter:image" content="og-image.png">
 
@@ -191,6 +191,39 @@
   .guess-row button:hover{background:var(--teal-dark);}
   .guess-row button:disabled{background:#9AA39F; cursor:not-allowed;}
 
+
+  .status-line-row{display:flex; justify-content:space-between; align-items:center; gap:10px; margin:-6px 0 20px;}
+  .status-line-row .status-line{margin:0;}
+  .stats-icon-btn{
+    background:none; border:1.5px solid var(--border); color:var(--ink-soft);
+    font-family:'IBM Plex Mono',monospace; font-size:11px; padding:6px 10px; cursor:pointer; border-radius:2px; white-space:nowrap;
+  }
+  .stats-icon-btn:hover{border-color:var(--ink); color:var(--ink);}
+
+  .stats-overlay{
+    position:fixed; inset:0; background:rgba(31,46,43,0.6); display:none;
+    align-items:center; justify-content:center; z-index:100; padding:16px;
+  }
+  .stats-overlay.show{display:flex;}
+  .stats-modal{
+    background:var(--card); border:2px solid var(--ink); width:100%; max-width:420px;
+    padding:26px 24px 22px; position:relative; max-height:92vh; overflow-y:auto;
+    animation:popIn 0.35s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  .stats-close{position:absolute; top:8px; right:12px; background:none; border:none; font-size:20px; cursor:pointer; color:var(--ink-soft);}
+  .stats-modal h3{margin:0 0 20px; font-family:'Courier Prime',monospace; font-size:18px; text-align:center;}
+  .stats-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:24px; text-align:center;}
+  .stats-grid .num{font-family:'IBM Plex Mono',monospace; font-size:28px; font-weight:700; line-height:1.1;}
+  .stats-grid .lbl{font-size:10.5px; color:var(--ink-soft); margin-top:4px; line-height:1.25;}
+  .dist-title{font-family:'IBM Plex Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--ink-soft); margin-bottom:10px; text-align:center;}
+  .dist-row{display:flex; align-items:center; gap:8px; margin-bottom:5px; font-family:'IBM Plex Mono',monospace; font-size:12px;}
+  .dist-label{width:22px; text-align:center; color:var(--ink-soft);}
+  .dist-bar-wrap{flex:1; background:var(--pending-bg); height:24px;}
+  .dist-bar{height:100%; display:flex; align-items:center; justify-content:flex-end; padding-right:7px; color:#fff; font-size:12px; font-weight:600; min-width:22px; transition:width 0.4s ease;}
+  .dist-bar.zero{background:var(--border); color:var(--ink-soft); justify-content:center; padding:0;}
+  .stats-footer{margin-top:18px; padding-top:14px; border-top:1px dashed var(--paper-line); text-align:center; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-soft);}
+  .stats-footer b{color:var(--ink);}
+
   .status-line{
     font-family:'IBM Plex Mono', monospace;
     font-size:12.5px;
@@ -333,7 +366,8 @@
     .guess-row input{font-size:16px; padding:12px 14px;}
     .guess-row button{padding:12px 14px; width:100%;}
     .suggestions li{padding:12px 14px; font-size:15px;}
-    .status-line{margin:0 0 14px; text-align:center;}
+    .status-line-row{margin:0 0 14px;}
+    .stats-icon-btn{padding:8px 10px;}
 
     .board-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 -14px; padding:0 14px 6px;}
     .board{min-width:600px; gap:3px;}
@@ -361,7 +395,7 @@
   <header>
     <div class="brand-block">
       <h1>DOCTLE</h1>
-      <p id="modeTagline">descubra a doença do dia - atributos revelam a cada tentativa</p>
+      <p id="modeTagline">descubra a doença do dia — atributos revelam a cada tentativa</p>
     </div>
     <div class="chart-no">PRONTUÁRIO Nº <b id="chartNo">0000</b></div>
   </header>
@@ -382,7 +416,10 @@
         </div>
         <button id="doencaBtn">Diagnosticar</button>
       </div>
-      <div class="status-line" id="doencaStatus">Tentativa 0 de 8</div>
+      <div class="status-line-row">
+        <div class="status-line" id="doencaStatus">Tentativa 0 de 8</div>
+        <button class="stats-icon-btn" id="doencaStatsBtn">📊 Estatísticas</button>
+      </div>
 
       <div class="board-scroll">
         <div class="board">
@@ -422,7 +459,10 @@
         </div>
         <button id="exameBtn">Investigar</button>
       </div>
-      <div class="status-line" id="exameStatus">Pista 1 de 5</div>
+      <div class="status-line-row">
+        <div class="status-line" id="exameStatus">Pista 1 de 5</div>
+        <button class="stats-icon-btn" id="exameStatsBtn">📊 Estatísticas</button>
+      </div>
 
       <div class="clue-list" id="clueList"></div>
       <div class="wrong-chips" id="exameWrongChips"></div>
@@ -450,7 +490,10 @@
         </div>
         <button id="residenciaBtn">Apostar</button>
       </div>
-      <div class="status-line" id="residenciaStatus">Emoji 1 de 4</div>
+      <div class="status-line-row">
+        <div class="status-line" id="residenciaStatus">Emoji 1 de 4</div>
+        <button class="stats-icon-btn" id="residenciaStatsBtn">📊 Estatísticas</button>
+      </div>
 
       <div class="emoji-row" id="emojiRow"></div>
       <div class="wrong-chips" id="residenciaWrongChips"></div>
@@ -469,9 +512,11 @@
   </section>
 
   <footer>
-    protótipo v0.6 · dados simplificados para fins de jogo, não usar como referência clínica · incidência = casos estimados por 100 mil hab./ano (ordem de grandeza aproximada)
+    protótipo v0.5 · dados simplificados para fins de jogo, não usar como referência clínica · incidência = casos estimados por 100 mil hab./ano (ordem de grandeza aproximada)
   </footer>
 </div>
+
+<div class="stats-overlay" id="statsOverlay"></div>
 
 <script>
 /* =================================================================
@@ -667,6 +712,8 @@ function setupAutocomplete(inputEl, suggEl, getPool, onEnterSubmit){
     if(!inputEl.closest('.autocomplete-wrapper').contains(e.target)) hide();
   });
   return { hide };
+}
+
 
 /* ---------- ANALYTICS (Cloudflare Web Analytics) ----------
    Cole abaixo o token do seu site no Cloudflare. Enquanto estiver vazio, nada é carregado. */
@@ -754,8 +801,7 @@ function openStatsModal(cfg){
   document.getElementById('statsCloseBtn').addEventListener('click', closeStatsModal);
   startCountdownFor(document.getElementById('statsCountdown'));
 }
-  
-}
+
 function startCountdownFor(countdownEl){
   function tick(){
     const ms = msUntilNextMidnightBR();
@@ -950,7 +996,7 @@ document.getElementById('chartNo').textContent = String(1000 + dayIndexFromKey(t
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         dateKey, guesses: [...guessedNames], gameOver
       }));
-    }catch(e){ /* localStorage indisponível -jogo segue funcionando, só sem persistir */ }
+    }catch(e){ /* localStorage indisponível — jogo segue funcionando, só sem persistir */ }
   }
   function loadState(){
     try{
@@ -999,16 +1045,20 @@ document.getElementById('chartNo').textContent = String(1000 + dayIndexFromKey(t
   }
   let countdownStarted = false;
 
-  function endGame(won){
+  const STATS_CFG = () => ({ statsKey:'doctle_doenca_stats_v1', maxTries:MAX_TRIES, title:'Estatísticas — Doença do dia', accent:'var(--teal)' });
+  document.getElementById('doencaStatsBtn').addEventListener('click', () => openStatsModal(STATS_CFG()));
+  function endGame(won, restored){
     gameOver = true; inputEl.disabled = true; btnEl.disabled = true; hideSuggestions();
     saveState();
+    recordResult('doctle_doenca_stats_v1', dateKey, won, tries, MAX_TRIES);
+    if(!restored) setTimeout(() => openStatsModal(STATS_CFG()), 1400);
     if(won){
       stampEl.textContent='DIAGNOSTICADO'; stampEl.className='stamp win';
-      titleEl.textContent=`Correto - ${target.name}`;
+      titleEl.textContent=`Correto — ${target.name}`;
       textEl.textContent=`Você fechou o diagnóstico em ${tries} tentativa(s).`;
     } else {
       stampEl.textContent='CASO ENCERRADO'; stampEl.className='stamp lose';
-      titleEl.textContent=`Não foi dessa vez - era ${target.name}`;
+      titleEl.textContent=`Não foi dessa vez — era ${target.name}`;
       textEl.textContent=`Categoria: ${target.categoria} · Cura: ${target.cura} · Contágio: ${target.contagio} · Sistema: ${target.sistema} · Ano: ${target.ano} · Incidência: ${fmtInc(target.incidencia)}/100mil`;
     }
     popResult(resultEl);
@@ -1044,7 +1094,7 @@ document.getElementById('chartNo').textContent = String(1000 + dayIndexFromKey(t
       if(saved.gameOver){
         const lastGuessName = saved.guesses[saved.guesses.length-1];
         const won = lastGuessName === target.name;
-        endGame(won);
+        endGame(won, true);
       }
     }
   }
@@ -1149,16 +1199,20 @@ document.getElementById('chartNo').textContent = String(1000 + dayIndexFromKey(t
     if(won) squares[squares.length-1] = '🟩';
     return headline + '\n' + squares.join('');
   }
-  function endGame(won){
+  const STATS_CFG = () => ({ statsKey:'doctle_exame_stats_v1', maxTries:target.clues.length, title:'Estatísticas — Exame do dia', accent:'var(--exam)' });
+  document.getElementById('exameStatsBtn').addEventListener('click', () => openStatsModal(STATS_CFG()));
+  function endGame(won, restored){
     gameOver = true; inputEl.disabled = true; btnEl.disabled = true; autocomplete.hide();
     saveState();
+    recordResult('doctle_exame_stats_v1', dateKey, won, tries, target.clues.length);
+    if(!restored) setTimeout(() => openStatsModal(STATS_CFG()), 1400);
     if(won){
       stampEl.textContent='LAUDO CONCLUÍDO'; stampEl.className='stamp win';
-      titleEl.textContent=`Correto - ${target.name}`;
+      titleEl.textContent=`Correto — ${target.name}`;
       textEl.textContent=`Você identificou o exame com ${tries} tentativa(s).`;
     } else {
       stampEl.textContent='LAUDO INCONCLUSIVO'; stampEl.className='stamp lose';
-      titleEl.textContent=`Não foi dessa vez - era ${target.name}`;
+      titleEl.textContent=`Não foi dessa vez — era ${target.name}`;
       textEl.textContent=`As pistas completas: ${target.clues.join(' · ')}`;
     }
     popResult(resultEl);
@@ -1193,7 +1247,7 @@ document.getElementById('chartNo').textContent = String(1000 + dayIndexFromKey(t
       statusEl.textContent = `Pista ${revealedCount} de ${target.clues.length}`;
       if(saved.gameOver){
         const lastGuessName = saved.guesses[saved.guesses.length-1];
-        endGame(lastGuessName === target.name);
+        endGame(lastGuessName === target.name, true);
       }
     }
   }
@@ -1301,16 +1355,20 @@ document.getElementById('chartNo').textContent = String(1000 + dayIndexFromKey(t
       : `Fiquei na dúvida na residência médica #DOCTLE 🔨`;
     return headline + '\n' + revealed;
   }
-  function endGame(won){
+  const STATS_CFG = () => ({ statsKey:'doctle_residencia_stats_v1', maxTries:target.emojis.length, title:'Estatísticas — Residência do dia', accent:'var(--res)' });
+  document.getElementById('residenciaStatsBtn').addEventListener('click', () => openStatsModal(STATS_CFG()));
+  function endGame(won, restored){
     gameOver = true; inputEl.disabled = true; btnEl.disabled = true; autocomplete.hide();
     saveState();
+    recordResult('doctle_residencia_stats_v1', dateKey, won, tries, target.emojis.length);
+    if(!restored) setTimeout(() => openStatsModal(STATS_CFG()), 1400);
     if(won){
       stampEl.textContent='BATEU O MARTELO'; stampEl.className='stamp win';
-      titleEl.textContent=`Correto - ${target.name}`;
+      titleEl.textContent=`Correto — ${target.name}`;
       textEl.textContent=`Você acertou a especialidade com ${tries} tentativa(s).`;
     } else {
       stampEl.textContent='ENCAMINHADO PRA OUTRA ÁREA'; stampEl.className='stamp lose';
-      titleEl.textContent=`Não foi dessa vez - era ${target.name}`;
+      titleEl.textContent=`Não foi dessa vez — era ${target.name}`;
       textEl.textContent=`Os emojis completos: ${target.emojis.join(' ')}`;
     }
     popResult(resultEl);
@@ -1345,7 +1403,7 @@ document.getElementById('chartNo').textContent = String(1000 + dayIndexFromKey(t
       statusEl.textContent = `Emoji ${revealedCount} de ${target.emojis.length}`;
       if(saved.gameOver){
         const lastGuessName = saved.guesses[saved.guesses.length-1];
-        endGame(lastGuessName === target.name);
+        endGame(lastGuessName === target.name, true);
       }
     }
   }
@@ -1357,9 +1415,9 @@ document.getElementById('chartNo').textContent = String(1000 + dayIndexFromKey(t
    TABS
 ================================================================= */
 const taglines = {
-  doenca: "descubra a doença do dia - atributos revelam a cada tentativa",
-  exame: "descubra o exame do dia - a cada erro, uma pista nova é liberada",
-  residencia: "descubra a residência médica do dia pelos emojis -modo bem-humorado"
+  doenca: "descubra a doença do dia — atributos revelam a cada tentativa",
+  exame: "descubra o exame do dia — a cada erro, uma pista nova é liberada",
+  residencia: "descubra a residência médica do dia pelos emojis — modo bem-humorado"
 };
 document.querySelectorAll('.mode-tab').forEach(tab => {
   tab.addEventListener('click', () => {
