@@ -667,6 +667,94 @@ function setupAutocomplete(inputEl, suggEl, getPool, onEnterSubmit){
     if(!inputEl.closest('.autocomplete-wrapper').contains(e.target)) hide();
   });
   return { hide };
+
+/* ---------- ANALYTICS (Cloudflare Web Analytics) ----------
+   Cole abaixo o token do seu site no Cloudflare. Enquanto estiver vazio, nada é carregado. */
+
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "35a447041ea347f7b801f679b581cfbf"}'></script><!-- End Cloudflare Web Analytics -->
+
+/* ---------- ESTATÍSTICAS / OFENSIVA ---------- */
+function loadJSON(key){ try{ const r = localStorage.getItem(key); return r ? JSON.parse(r) : null; }catch(e){ return null; } }
+function saveJSON(key, obj){ try{ localStorage.setItem(key, JSON.stringify(obj)); }catch(e){} }
+function dayNumberFromKey(k){ const [y,m,d] = k.split('-').map(Number); return Math.floor(Date.UTC(y,m-1,d)/86400000); }
+
+function getStats(statsKey, maxTries){
+  const s = loadJSON(statsKey);
+  if(s && Array.isArray(s.distribution)){
+    while(s.distribution.length < maxTries) s.distribution.push(0);
+    return s;
+  }
+  return { gamesPlayed:0, gamesWon:0, currentStreak:0, maxStreak:0, distribution:Array(maxTries).fill(0), lastCounted:null, lastWon:false };
+}
+// Contabiliza o resultado do dia UMA vez só (seguro chamar de novo ao recarregar a página)
+function recordResult(statsKey, dateKey, won, tries, maxTries){
+  const s = getStats(statsKey, maxTries);
+  if(s.lastCounted === dateKey) return s;
+  const consecutive = s.lastCounted && s.lastWon && (dayNumberFromKey(dateKey) - dayNumberFromKey(s.lastCounted) === 1);
+  s.gamesPlayed++;
+  if(won){
+    s.gamesWon++;
+    s.currentStreak = consecutive ? s.currentStreak + 1 : 1;
+    s.maxStreak = Math.max(s.maxStreak, s.currentStreak);
+    const idx = Math.min(tries, maxTries) - 1;
+    if(idx >= 0) s.distribution[idx] = (s.distribution[idx] || 0) + 1;
+  } else {
+    s.currentStreak = 0;
+  }
+  s.lastCounted = dateKey;
+  s.lastWon = won;
+  saveJSON(statsKey, s);
+  return s;
+}
+// Ofensiva "viva": se passou mais de 1 dia sem jogar, zera na exibição
+function effectiveStreak(s, todayKey){
+  if(!s.lastCounted || !s.lastWon) return 0;
+  return (dayNumberFromKey(todayKey) - dayNumberFromKey(s.lastCounted) <= 1) ? s.currentStreak : 0;
+}
+
+const statsOverlay = document.getElementById('statsOverlay');
+function closeStatsModal(){ statsOverlay.classList.remove('show'); }
+statsOverlay.addEventListener('click', e => { if(e.target === statsOverlay) closeStatsModal(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeStatsModal(); });
+
+function openStatsModal(cfg){
+  const s = getStats(cfg.statsKey, cfg.maxTries);
+  const today = todayKeyBR();
+  const pct = s.gamesPlayed ? Math.round(100 * s.gamesWon / s.gamesPlayed) : 0;
+  const streak = effectiveStreak(s, today);
+  const maxCount = Math.max(1, ...s.distribution);
+  const rows = s.distribution.slice(0, cfg.maxTries).map((count, i) => {
+    const w = Math.max(10, Math.round(100 * count / maxCount));
+    return `<div class="dist-row"><div class="dist-label">${i+1}</div><div class="dist-bar-wrap">` +
+      (count > 0
+        ? `<div class="dist-bar" style="width:${w}%; background:${cfg.accent}">${count}</div>`
+        : `<div class="dist-bar zero" style="width:22px">0</div>`) +
+      `</div></div>`;
+  }).join('');
+  const losses = s.gamesPlayed - s.gamesWon;
+  const lossRow = `<div class="dist-row"><div class="dist-label">💀</div><div class="dist-bar-wrap">` +
+    (losses > 0
+      ? `<div class="dist-bar" style="width:${Math.max(10, Math.round(100*losses/maxCount))}%; background:var(--wrong)">${losses}</div>`
+      : `<div class="dist-bar zero" style="width:22px">0</div>`) + `</div></div>`;
+  statsOverlay.innerHTML = `
+    <div class="stats-modal">
+      <button class="stats-close" id="statsCloseBtn" aria-label="Fechar">✕</button>
+      <h3>${cfg.title}</h3>
+      <div class="stats-grid">
+        <div><div class="num">${s.gamesPlayed}</div><div class="lbl">jogos</div></div>
+        <div><div class="num">${pct}%</div><div class="lbl">de vitórias</div></div>
+        <div><div class="num">${streak}</div><div class="lbl">ofensiva diária</div></div>
+        <div><div class="num">${s.maxStreak}</div><div class="lbl">melhor ofensiva</div></div>
+      </div>
+      <div class="dist-title">distribuição de tentativas</div>
+      ${rows}${lossRow}
+      <div class="stats-footer">próximo caso em <b id="statsCountdown">--:--:--</b></div>
+    </div>`;
+  statsOverlay.classList.add('show');
+  document.getElementById('statsCloseBtn').addEventListener('click', closeStatsModal);
+  startCountdownFor(document.getElementById('statsCountdown'));
+}
+  
 }
 function startCountdownFor(countdownEl){
   function tick(){
