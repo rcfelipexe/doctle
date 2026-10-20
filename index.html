@@ -718,7 +718,14 @@ function setupAutocomplete(inputEl, suggEl, getPool, onEnterSubmit){
 
 /* ---------- ANALYTICS (Cloudflare Web Analytics) ----------
    Cole abaixo o token do seu site no Cloudflare. Enquanto estiver vazio, nada é carregado. */
-<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "35a447041ea347f7b801f679b581cfbf"}'></script><!-- End Cloudflare Web Analytics -->
+const CF_BEACON_TOKEN = '35a447041ea347f7b801f679b581cfbf';
+if(CF_BEACON_TOKEN){
+  const a = document.createElement('script');
+  a.defer = true;
+  a.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+  a.setAttribute('data-cf-beacon', JSON.stringify({token: CF_BEACON_TOKEN}));
+  document.head.appendChild(a);
+}
 
 /* ---------- ESTATÍSTICAS / OFENSIVA ---------- */
 function loadJSON(key){ try{ const r = localStorage.getItem(key); return r ? JSON.parse(r) : null; }catch(e){ return null; } }
